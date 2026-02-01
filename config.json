@@ -1,0 +1,10 @@
+{
+    "lark_webhook_url": "https://open.feishu.cn/open-apis/bot/v2/hook/d787ef08-0967-44ab-bf0c-de08d9d2d56d",
+    "monitor_urls": [
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test1.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test2.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test3.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test_external.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test.vue"
+    ]
+}
