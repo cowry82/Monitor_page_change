@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web3 Alpha 趋势仪表板</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                        accent: '#ec4899',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter text-dark">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                    <i class="fa fa-rocket text-white text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Web3 Alpha 趋势仪表板</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2">
+                    <i class="fa fa-clock-o text-gray-500"></i>
+                    <span id="current-time" class="text-sm font-medium"></span>
+                </div>
+                <button id="refresh-btn" class="bg-primary hover:bg-primary/90 text-white rounded-full px-4 py-2 flex items-center space-x-2 transition-all duration-300">
+                    <i class="fa fa-refresh"></i>
+                    <span>刷新数据</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 时间筛选器 -->
+        <div class="mb-8 bg-white rounded-xl shadow-sm p-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-lg font-semibold">时间范围</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button data-time="hour" class="time-btn px-4 py-2 rounded-full border border-gray-300 hover:border-primary hover:text-primary transition-all duration-300">
+                        近1小时
+                    </button>
+                    <button data-time="day" class="time-btn px-4 py-2 rounded-full bg-primary text-white transition-all duration-300">
+                        近1天
+                    </button>
+                    <button data-time="week" class="time-btn px-4 py-2 rounded-full border border-gray-300 hover:border-primary hover:text-primary transition-all duration-300">
+                        近1周
+                    </button>
+                    <button data-time="month" class="time-btn px-4 py-2 rounded-full border border-gray-300 hover:border-primary hover:text-primary transition-all duration-300">
+                        近1月
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">总代币数</h3>
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fa fa-coins text-blue-500"></i>
+                    </div>
+                </div>
+                <p id="total-tokens" class="text-3xl font-bold">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">最高Alpha分数</h3>
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i class="fa fa-line-chart text-purple-500"></i>
+                    </div>
+                </div>
+                <p id="max-score" class="text-3xl font-bold">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">平均热度</h3>
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fa fa-fire text-red-500"></i>
+                    </div>
+                </div>
+                <p id="avg-heat" class="text-3xl font-bold">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-500 font-medium">数据更新时间</h3>
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fa fa-refresh text-green-500"></i>
+                    </div>
+                </div>
+                <p id="update-time" class="text-lg font-medium">--</p>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4">代币热度分布</h2>
+                <div class="h-80">
+                    <canvas id="heat-distribution-chart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4">Alpha分数趋势</h2>
+                <div class="h-80">
+                    <canvas id="score-trend-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 代币列表 -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <h2 class="text-lg font-semibold">热门代币</h2>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">排序:</span>
+                    <select id="sort-select" class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="score">Alpha分数</option>
+                        <option value="heat">热度</option>
+                        <option value="rank">排名</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <div id="tokens-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- 代币卡片将通过JavaScript动态生成 -->
+                    <div class="col-span-full flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                            <p class="text-gray-500">加载中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <i class="fa fa-rocket text-white"></i>
+                    </div>
+                    <span class="font-semibold">Web3 Alpha 趋势雷达</span>
+                </div>
+                <div class="text-sm text-gray-400">
+                    © 2026 Web3 Alpha. 数据来源于 Reddit、CoinGecko 和 DexScreener.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 全局变量
+        let currentTimeRange = 'day';
+        let tokenData = [];
+        
+        // DOM 元素
+        const timeButtons = document.querySelectorAll('.time-btn');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const tokensContainer = document.getElementById('tokens-container');
+        const totalTokensEl = document.getElementById('total-tokens');
+        const maxScoreEl = document.getElementById('max-score');
+        const avgHeatEl = document.getElementById('avg-heat');
+        const updateTimeEl = document.getElementById('update-time');
+        const currentTimeEl = document.getElementById('current-time');
+        const sortSelect = document.getElementById('sort-select');
+        
+        // 图表实例
+        let heatDistributionChart = null;
+        let scoreTrendChart = null;
+        
+        // API 基础 URL
+        const API_BASE_URL = '/api';
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 更新当前时间
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            
+            // 加载数据
+            loadData();
+            
+            // 事件监听
+            timeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const timeRange = this.dataset.time;
+                    setActiveTimeRange(timeRange);
+                    loadData();
+                });
+            });
+            
+            refreshBtn.addEventListener('click', loadData);
+            sortSelect.addEventListener('change', renderTokens);
+        });
+        
+        // 更新当前时间
+        function updateCurrentTime() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: false
+            };
+            currentTimeEl.textContent = now.toLocaleString('zh-CN', options);
+        }
+        
+        // 设置活跃的时间范围
+        function setActiveTimeRange(timeRange) {
+            currentTimeRange = timeRange;
+            
+            // 更新按钮样式
+            timeButtons.forEach(btn => {
+                if (btn.dataset.time === timeRange) {
+                    btn.classList.remove('border-gray-300', 'hover:border-primary', 'hover:text-primary');
+                    btn.classList.add('bg-primary', 'text-white');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('border-gray-300', 'hover:border-primary', 'hover:text-primary');
+                }
+            });
+        }
+        
+        // 加载数据
+        async function loadData() {
+            try {
+                // 显示加载状态
+                showLoadingState();
+                
+                // 获取代币数据
+                const tokensResponse = await fetch(`${API_BASE_URL}/tokens?time_range=${currentTimeRange}&limit=100`);
+                const tokensData = await tokensResponse.json();
+                
+                if (tokensData.data) {
+                    tokenData = tokensData.data;
+                    
+                    // 更新统计信息
+                    updateStatistics();
+                    
+                    // 渲染代币列表
+                    renderTokens();
+                    
+                    // 更新图表
+                    updateCharts();
+                    
+                    // 更新时间
+                    updateTimeEl.textContent = tokensData.query_time || new Date().toLocaleString('zh-CN');
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showErrorState('加载数据失败，请稍后重试');
+            }
+        }
+        
+        // 显示加载状态
+        function showLoadingState() {
+            tokensContainer.innerHTML = `
+                <div class="col-span-full flex items-center justify-center py-12">
+                    <div class="text-center">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                        <p class="text-gray-500">加载中...</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 显示错误状态
+        function showErrorState(message) {
+            tokensContainer.innerHTML = `
+                <div class="col-span-full flex items-center justify-center py-12">
+                    <div class="text-center">
+                        <div class="inline-block rounded-full h-12 w-12 bg-red-100 flex items-center justify-center mb-4">
+                            <i class="fa fa-exclamation-triangle text-red-500 text-xl"></i>
+                        </div>
+                        <p class="text-gray-500">${message}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 更新统计信息
+        function updateStatistics() {
+            if (tokenData.length === 0) return;
+            
+            totalTokensEl.textContent = tokenData.length;
+            
+            const maxScore = Math.max(...tokenData.map(token => token.alpha_score));
+            maxScoreEl.textContent = maxScore.toFixed(2);
+            
+            const totalHeat = tokenData.reduce((sum, token) => sum + token.heat_level, 0);
+            const avgHeat = totalHeat / tokenData.length;
+            avgHeatEl.textContent = avgHeat.toFixed(1);
+        }
+        
+        // 渲染代币列表
+        function renderTokens() {
+            if (tokenData.length === 0) {
+                tokensContainer.innerHTML = `
+                    <div class="col-span-full flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <div class="inline-block rounded-full h-12 w-12 bg-gray-100 flex items-center justify-center mb-4">
+                                <i class="fa fa-info-circle text-gray-500 text-xl"></i>
+                            </div>
+                            <p class="text-gray-500">暂无数据</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 排序
+            const sortBy = sortSelect.value;
+            let sortedTokens = [...tokenData];
+            
+            if (sortBy === 'score') {
+                sortedTokens.sort((a, b) => b.alpha_score - a.alpha_score);
+            } else if (sortBy === 'heat') {
+                sortedTokens.sort((a, b) => b.heat_level - a.heat_level);
+            } else if (sortBy === 'rank') {
+                sortedTokens.sort((a, b) => a.rank - b.rank);
+            }
+            
+            // 渲染代币卡片
+            tokensContainer.innerHTML = sortedTokens.map(token => {
+                // 生成热度图标
+                const heatIcons = '🔥'.repeat(Math.min(5, token.heat_level || 0));
+                
+                // 代币图标
+                const iconUrl = token.icon_url || `https://via.placeholder.com/40?text=${token.symbol}`;
+                
+                return `
+                    <div class="border border-gray-200 rounded-xl overflow-hidden card-hover">
+                        <div class="p-5">
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-100">
+                                    <img src="${iconUrl}" alt="${token.symbol}" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-lg">${token.symbol}</h3>
+                                    <p class="text-sm text-gray-500">${token.name}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex items-center justify-between text-sm mb-1">
+                                        <span class="text-gray-500">Alpha 分数</span>
+                                        <span class="font-semibold">${token.alpha_score.toFixed(2)}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 rounded-full h-2">
+                                        <div class="bg-gradient-to-r from-primary to-secondary h-2 rounded-full" style="width: ${Math.min(100, (token.alpha_score / 30) * 100)}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex items-center justify-between text-sm mb-1">
+                                        <span class="text-gray-500">热度</span>
+                                        <span class="font-semibold">${heatIcons}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 rounded-full h-2">
+                                        <div class="bg-gradient-to-r from-orange-400 to-red-500 h-2 rounded-full" style="width: ${(token.heat_level / 5) * 100}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-gray-500">排名</span>
+                                    <span class="font-semibold">${token.rank}</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between text-sm text-gray-500 mt-4">
+                                    <span>更新时间</span>
+                                    <span>${token.created_at}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 更新图表
+        function updateCharts() {
+            if (tokenData.length === 0) return;
+            
+            // 热度分布图表
+            updateHeatDistributionChart();
+            
+            // Alpha分数趋势图表
+            updateScoreTrendChart();
+        }
+        
+        // 更新热度分布图表
+        function updateHeatDistributionChart() {
+            const ctx = document.getElementById('heat-distribution-chart').getContext('2d');
+            
+            // 计算热度分布
+            const heatCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            tokenData.forEach(token => {
+                const heat = Math.min(5, Math.max(0, token.heat_level || 0));
+                heatCounts[heat]++;
+            });
+            
+            const labels = ['0', '1', '2', '3', '4', '5'];
+            const data = labels.map(label => heatCounts[label]);
+            
+            if (heatDistributionChart) {
+                heatDistributionChart.destroy();
+            }
+            
+            heatDistributionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '代币数量',
+                        data: data,
+                        backgroundColor: [
+                            'rgba(107, 114, 128, 0.7)',
+                            'rgba(249, 115, 22, 0.7)',
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(220, 38, 38, 0.7)',
+                            'rgba(185, 28, 28, 0.7)',
+                            'rgba(153, 27, 27, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(107, 114, 128)',
+                            'rgb(249, 115, 22)',
+                            'rgb(239, 68, 68)',
+                            'rgb(220, 38, 38)',
+                            'rgb(185, 28, 28)',
+                            'rgb(153, 27, 27)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `代币数量: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '代币数量'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '热度等级'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新Alpha分数趋势图表
+        function updateScoreTrendChart() {
+            const ctx = document.getElementById('score-trend-chart').getContext('2d');
+            
+            // 获取前10个代币的数据
+            const topTokens = [...tokenData]
+                .sort((a, b) => b.alpha_score - a.alpha_score)
+                .slice(0, 10);
+            
+            const labels = topTokens.map(token => token.symbol);
+            const data = topTokens.map(token => token.alpha_score);
+            
+            if (scoreTrendChart) {
+                scoreTrendChart.destroy();
+            }
+            
+            scoreTrendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Alpha 分数',
+                        data: data,
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: 'rgb(99, 102, 241)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Alpha 分数: ${context.raw.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Alpha 分数'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

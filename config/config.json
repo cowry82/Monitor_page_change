@@ -1,0 +1,39 @@
+{
+    "lark_webhook_url": "https://open.feishu.cn/open-apis/bot/v2/hook/d787ef08-0967-44ab-bf0c-de08d9d2d56d",
+    "monitor_urls": [
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test1.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test2.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test3.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test_external.html",
+        "file:///Users/wangyunbao/Documents/workspace/monitor_page/test.vue"
+    ],
+    "narratives": {
+        "AI": ["ai", "agent", "llm", "gpt"],
+        "RWA": ["rwa", "real world asset"],
+        "DePIN": ["depin", "decentralized physical"],
+        "L2": ["layer2", "l2", "rollup"],
+        "Restaking": ["restake", "eigen"],
+        "Meme": ["meme", "pepe", "doge"],
+        "GameFi": ["gamefi", "gaming", "play to earn"],
+        "DeFi": ["defi", "yield", "dex", "amm"]
+    },
+    "data_sources": {
+        "reddit": {
+            "enabled": true,
+            "weight": 1.0,
+            "client_id": "",
+            "client_secret": "",
+            "user_agent": "web3-alpha-tracker"
+        },
+        "coingecko": {
+            "enabled": true,
+            "weight": 1.5,
+            "api_url": "https://api.coingecko.com/api/v3"
+        },
+        "dexscreener": {
+            "enabled": true,
+            "weight": 0.7,
+            "api_url": "https://api.dexscreener.com/latest/dex/search"
+        }
+    }
+}
